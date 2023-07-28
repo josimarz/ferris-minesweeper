@@ -1,0 +1,59 @@
+button {
+    border-radius: 0;
+    border: none;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+button.odd-closed {
+    background: #acce5e;
+}
+
+button.even-closed {
+    background: #b3d465;
+}
+
+button.odd-open {
+    background: #d2b99d;
+}
+
+button.even-open {
+    background: #dfc3a3;
+}
+
+button.mine {
+    color: black;
+}
+
+button.one {
+    color: blue;
+}
+
+button.two {
+    color: green;
+}
+
+button.three {
+    color: red;
+}
+
+button.four {
+    color: purple;
+}
+
+button.five {
+    color: maroon;
+}
+
+button.six {
+    color: turquoise;
+}
+
+button.seven {
+    color: black;
+}
+
+button.eight {
+    color: gray;
+}

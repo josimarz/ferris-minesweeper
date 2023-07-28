@@ -15,8 +15,8 @@ enum Status {
     Lost,
 }
 
-#[derive(Clone, Copy)]
-enum Tag {
+#[derive(Clone, Copy, Debug)]
+pub enum Tag {
     None,
     Flag,
     Question,
@@ -44,7 +44,7 @@ impl Position {
         Position { x, y }
     }
 
-    fn equals(&self, position: &Position) -> bool {
+    pub fn equals(&self, position: &Position) -> bool {
         self.x == position.x && self.y == position.y
     }
 
@@ -117,7 +117,7 @@ impl Square {
     }
 }
 
-struct Board {
+pub struct Board {
     rows: u8,
     cols: u8,
     mines: u8,
@@ -174,13 +174,13 @@ impl Board {
         self.squares
             .iter_mut()
             .for_each(|square| {
-                if square.is_adjacent(position) {
+                if !square.openned && square.is_adjacent(position) {
                     square.open();
                 }
             });
         self.squares
             .iter()
-            .filter(|square| square.is_adjacent(position))
+            .filter(|square| square.openned && square.is_adjacent(position))
             .map(|square| square.position)
             .collect::<Vec<_>>()
     }
@@ -190,25 +190,17 @@ impl Board {
     }
 
     fn open_square(&mut self, position: &Position) -> Vec<Position> {
-        let mut openned_positions: Vec<Position> = Vec::new();
-        let adjacent_mines = self.count_adjacent_mines(position);
-        
-        if adjacent_mines == 0 {
-            let found = self.squares.iter().find(|square| square.matches_position(position) && !square.mined);
-            if found.is_some() {
-                openned_positions.append(self.open_adjacencies(position).as_mut());
-            }
-        }
-
-        let found = self.squares.iter_mut().find(|square| square.matches_position(position));
-        
+        let found = self.squares.iter_mut().find(|square| square.matches_position(position) && !square.openned);
         if let Some(square) = found {
             if square.open() {
-                openned_positions.push(*position);
+                if !square.mined && self.count_adjacent_mines(position) == 0 {
+                    let mut openned_squares = self.open_adjacencies(position);
+                    openned_squares.push(*position);
+                    return openned_squares;
+                }
             }
         }
-
-        openned_positions
+        vec![*position]
     }
 
     fn tag_square(&mut self, position: &Position) -> Tag {
@@ -225,6 +217,11 @@ impl Board {
 
     fn lost(&self) -> bool {
         self.squares.iter().filter(|square| square.mined && square.openned).count() > 0
+    }
+
+    fn is_mined(&self, position: &Position) -> bool {
+        let found = self.squares.iter().find(|square| square.matches_position(position) && square.mined);
+        found.is_some()
     }
 }
 
@@ -289,17 +286,33 @@ impl Game {
         vec![]
     }
 
-    fn tag_square(&mut self, position: &Position) -> Tag {
+    pub fn tag_square(&mut self, position: &Position) -> Tag {
         if let Some(board) = self.board.as_mut() {
             return board.tag_square(position);
         }
         Tag::None
     }
 
-    fn count_adjacent_mines(&mut self, position: &Position) -> usize {
+    pub fn count_adjacent_mines(&mut self, position: &Position) -> usize {
         match self.board.as_mut() {
             Some(board) => board.count_adjacent_mines(position),
             None => 0,
+        }
+    }
+
+    pub fn is_over(&self) -> bool {
+        match self.status {
+            Status::Stopped => false,
+            Status::Playing => false,
+            Status::Lost => true,
+            Status::Won => true,
+        }
+    }
+
+    pub fn is_mined(&self, position: &Position) -> bool {
+        match self.board.as_ref() {
+            Some(board) => board.is_mined(position),
+            None => false,
         }
     }
 }
