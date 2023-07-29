@@ -3,7 +3,7 @@ use std::{ptr::NonNull, rc::Rc, cell::RefCell};
 use gtk4 as gtk;
 use gtk::{prelude::*, glib::clone};
 
-use crate::game::{self, OpennedPosition};
+use crate::game;
 
 const BUTTON_SIZE: i32 = 16;
 
@@ -18,7 +18,7 @@ fn load_css() {
     );
 }
 
-fn open_positions(positions: Vec<OpennedPosition>, grid: &gtk::Grid) {
+fn open_positions(positions: Vec<game::OpennedPosition>, grid: &gtk::Grid) {
     for openned_pos in positions {
         let position = openned_pos.position;
         let button = grid.child_at(
@@ -71,7 +71,7 @@ fn button_on_click(game: &Rc<RefCell<game::Game>>, button: &gtk::Button) {
         return;
     }
     let position = position.unwrap();
-    let positions: Vec<OpennedPosition>;
+    let positions: Vec<game::OpennedPosition>;
     unsafe {
         let position = game::Position::new(position.as_ref().x ,position.as_ref().y);
         positions = game.borrow_mut().open_position(position);
@@ -153,12 +153,13 @@ fn build_ui(app: &gtk::Application) {
         .default_width(window_width)
         .default_height(window_height)
         .resizable(false)
+        .show_menubar(true)
         .title("Ferris Minesweeper")
         .build();
 
     let grid = build_board(&game);
     window.set_child(Some(&grid));
-    window.show();
+    window.present();
 }
 
 pub fn run() -> gtk::glib::ExitCode {
@@ -166,8 +167,19 @@ pub fn run() -> gtk::glib::ExitCode {
         .application_id("com.josimarz.ferris-minesweeper")
         .build();
 
-    app.connect_startup(|_| { load_css(); });
+    app.connect_startup(|app| {
+        let menubar = gtk::gio::Menu::new();
+        let game_menu = gtk::gio::Menu::new();
+        let easy_menu = gtk::gio::MenuItem::new(Some("Easy"), None);
+        let medium_menu = gtk::gio::MenuItem::new(Some("Medium"), None);
+        let hard_menu = gtk::gio::MenuItem::new(Some("Hard"), None);
+        menubar.append_item(&easy_menu);
+        menubar.append_item(&medium_menu);
+        menubar.append_item(&hard_menu);
+        menubar.append_submenu(Some("Game"), &game_menu);
+        app.set_menubar(Some(&menubar));
+        load_css();
+    });
     app.connect_activate(build_ui);
-
     app.run()
 }
